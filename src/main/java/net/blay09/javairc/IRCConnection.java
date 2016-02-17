@@ -276,7 +276,7 @@ public class IRCConnection implements Runnable {
         sendRaw("PART " + channel);
     }
 
-    public void privmsg(String target, String message) {
+    public void message(String target, String message) {
         sendRaw("PRIVMSG " + target + " :" + message);
     }
 
@@ -340,4 +340,17 @@ public class IRCConnection implements Runnable {
     public boolean isRunning() {
         return running;
     }
+
+    public String getServerType() {
+        return serverType;
+    }
+
+    public UserSnapshot getUserSnapshot(String name) {
+        return userSnapshots.get(name.toLowerCase());
+    }
+
+    public ChannelSnapshot getChannelSnapshot(String name) {
+        return channelSnapshots.get(name.toLowerCase());
+    }
+
 }

@@ -17,19 +17,19 @@ public class SnapshotWrapper implements IRCListener {
     }
 
     private UserSnapshot getUserSnapshot(String nick) {
-        UserSnapshot user = users.get(nick);
+        UserSnapshot user = users.get(nick.toLowerCase());
         if(user == null) {
             user = new UserSnapshot(nick);
-            users.put(nick, user);
+            users.put(nick.toLowerCase(), user);
         }
         return user;
     }
 
     private ChannelSnapshot getChannelSnapshot(String name) {
-        ChannelSnapshot channel = channels.get(name);
+        ChannelSnapshot channel = channels.get(name.toLowerCase());
         if(channel == null) {
             channel = new ChannelSnapshot(name);
-            channels.put(name, channel);
+            channels.put(name.toLowerCase(), channel);
         }
         return channel;
     }
