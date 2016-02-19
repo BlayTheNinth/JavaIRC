@@ -1,6 +1,15 @@
 apply plugin: 'java'
 apply plugin: 'idea'
 
+def BUILD_NUMBER = System.getenv("BUILD_NUMBER") ?: "0"
+def MAVEN_REPO = System.getenv("MAVEN_REPO") ?: ""
+def MAVEN_USERNAME = System.getenv("MAVEN_USERNAME") ?: ""
+def MAVEN_PASSWORD = System.getenv("MAVEN_PASSWORD") ?: ""
+
+version = "0.0." + BUILD_NUMBER
+group = "net.blay09"
+archivesBaseName = "javairc"
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -22,4 +31,31 @@ repositories {
 dependencies {
     provided 'org.projectlombok:lombok:1.16.6'
     testCompile 'junit:junit:4.12'
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: MAVEN_REPO) {
+                authentication(userName: MAVEN_USERNAME, password: MAVEN_PASSWORD)
+            }
+
+            pom {
+                groupId = project.group
+                version = project.version
+                artifactId = project.archivesBaseName
+            }
+
+            pom.withXml {
+                asNode().dependencies.dependency.findAll {
+                    it.scope.text() == "compile"
+                }.each {
+                    if(it.optional)
+                        it.optional.value = 'true'
+                    else
+                        it.appendNode('optional', 'true');
+                }
+            }
+        }
+    }
 }
