@@ -10,7 +10,7 @@ import java.util.List;
 
 @Builder
 @Value
-public class Configuration {
+public class IRCConfiguration {
     private String server;
     private int port;
     private String nick;
@@ -30,10 +30,10 @@ public class Configuration {
     @Singular
     private List<String> capabilities;
 
-    public static ConfigurationBuilder builder() {
+    public static IRCConfigurationBuilder builder() {
         // This does not really error, it's just a bug in the Lombok plugin for IntelliJ.
         // It'll compile and run just fine.
         // https://github.com/rzwitserloot/lombok/issues/1006
-        return new ConfigurationBuilder().port(6667).messageDelay(33).encoding(StandardCharsets.UTF_8);
+        return new IRCConfigurationBuilder().port(6667).messageDelay(33).encoding(StandardCharsets.UTF_8);
     }
 }

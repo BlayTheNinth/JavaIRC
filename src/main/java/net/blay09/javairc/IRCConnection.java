@@ -29,7 +29,7 @@ public class IRCConnection implements Runnable {
     private static final String LINE_FEED = "\r\n";
 
     private final IRCListener listener;
-    private final Configuration configuration;
+    private final IRCConfiguration configuration;
     private final Thread thread;
     private final IRCParser parser;
     private final IRCSender sender;
@@ -50,7 +50,7 @@ public class IRCConnection implements Runnable {
     private String channelUserModes = "ov";
     private String channelUserModePrefixes = "@+";
 
-    public IRCConnection(Configuration configuration, IRCListener listener) {
+    public IRCConnection(IRCConfiguration configuration, IRCListener listener) {
         if(configuration.isSnapshots()) {
             channelSnapshots = new HashMap<>();
             userSnapshots = new HashMap<>();

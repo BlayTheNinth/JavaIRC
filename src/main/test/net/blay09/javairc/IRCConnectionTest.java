@@ -8,7 +8,7 @@ public class IRCConnectionTest {
 
     @Test
     public void testIRCConnection() throws Exception {
-        Configuration configuration = Configuration.builder()
+        IRCConfiguration configuration = IRCConfiguration.builder()
                 .server("irc.esper.net")
                 .nick("BalyChan")
                 .debug(true)
