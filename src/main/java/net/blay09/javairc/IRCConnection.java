@@ -269,7 +269,11 @@ public class IRCConnection implements Runnable {
     }
 
     public void join(String channel) {
-        sendRaw("JOIN " + channel);
+        join(channel, null);
+    }
+
+    public void join(String channel, String password) {
+        sendRaw("JOIN " + channel + (password != null ? " " + password : ""));
     }
 
     public void part(String channel) {
