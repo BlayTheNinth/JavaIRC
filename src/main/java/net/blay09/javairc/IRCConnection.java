@@ -306,9 +306,13 @@ public class IRCConnection implements Runnable {
     }
 
     public void sendRawNow(String line) throws IOException {
-        writer.write(line);
-        writer.write(LINE_FEED);
-        writer.flush();
+        if(writer != null) {
+            writer.write(line);
+            writer.write(LINE_FEED);
+            writer.flush();
+        } else {
+            throw new NotConnectedException("Attempted to send message while not connected to IRC server.");
+        }
     }
 
     public void unhandledException(Exception e) {
