@@ -13,9 +13,6 @@ version = "0.0." + BUILD_NUMBER
 group = "net.blay09"
 archivesBaseName = "javairc"
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
 repositories {
     mavenCentral()
 }

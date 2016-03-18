@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class IRCParser {
 
-    private final List<String> args = new ArrayList<>();
+    private final List<String> args = new ArrayList<String>();
     private String data;
     private int idx;
 
@@ -18,7 +18,7 @@ public class IRCParser {
             idx++;
             String tags = nextToken();
             String[] splitTags = tags.split(";");
-            tagMap = new HashMap<>(splitTags.length);
+            tagMap = new HashMap<String, String>(splitTags.length);
             for(String tagPair : splitTags) {
                 int eqIdx = tagPair.indexOf('=');
                 if(eqIdx != -1) {

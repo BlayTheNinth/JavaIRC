@@ -50,10 +50,10 @@ public class IRCConnection implements Runnable {
     private String channelUserModes = "ov";
     private String channelUserModePrefixes = "@+";
 
-    public IRCConnection(IRCConfiguration configuration, IRCListener listener) {
+    public IRCConnection(final IRCConfiguration configuration, IRCListener listener) {
         if(configuration.isSnapshots()) {
-            channelSnapshots = new HashMap<>();
-            userSnapshots = new HashMap<>();
+            channelSnapshots = new HashMap<String, ChannelSnapshot>();
+            userSnapshots = new HashMap<String, UserSnapshot>();
             this.listener = new SnapshotWrapper(listener, channelSnapshots, userSnapshots);
         } else {
             channelSnapshots = null;
@@ -99,7 +99,7 @@ public class IRCConnection implements Runnable {
                         sslSocket.bind(new InetSocketAddress(configuration.getLocalAddress(), configuration.getPort()));
                     }
                     if(configuration.isDisableDiffieHellman()) {
-                        List<String> cipherSuites = new ArrayList<>();
+                        List<String> cipherSuites = new ArrayList<String>();
                         for(String suite : sslSocket.getEnabledCipherSuites()) {
                             if(!suite.contains("_DHE_")) {
                                 cipherSuites.add(suite);
@@ -109,7 +109,9 @@ public class IRCConnection implements Runnable {
                     }
                     sslSocket.startHandshake();
                     socket = sslSocket;
-                } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                } catch (NoSuchAlgorithmException e) {
+                    listener.onConnectionFailed(this, e);
+                } catch (KeyManagementException e) {
                     listener.onConnectionFailed(this, e);
                 }
             } else {
@@ -175,46 +177,37 @@ public class IRCConnection implements Runnable {
             handleMessageNumeric(numeric, message);
             return;
         }
-        switch(message.getCommand()) {
-            case "PING": // response
-                sendRaw("PONG " + message.arg(0));
-                break;
-            case "NOTICE": // target, message
-                if (channelTypes.indexOf(message.arg(0).charAt(0)) != -1) {
-                    listener.onChannelNotice(this, message, message.parseSender(), message.arg(0), message.arg(1));
-                } else {
-                    listener.onUserNotice(this, message, message.parseSender(), message.arg(1));
-                }
-                break;
-            case "PRIVMSG": // target, message
-                if (channelTypes.indexOf(message.arg(0).charAt(0)) != -1) {
-                    listener.onChannelChat(this, message, message.parseSender(), message.arg(0), message.arg(1));
-                } else {
-                    listener.onUserChat(this, message, message.parseSender(), message.arg(1));
-                }
-                break;
-            case "JOIN": // nick
-                listener.onUserJoin(this, message, message.parseSender(), message.arg(0));
-                break;
-            case "PART": // nick, quitMessage
-                listener.onUserPart(this, message, message.parseSender(), message.arg(0), message.arg(1));
-                break;
-            case "TOPIC": // channel, topic
-                listener.onChannelTopicChange(this, message, message.parseSender(), message.arg(0), message.arg(1));
-                break;
-            case "NICK": // nick
-                listener.onUserNickChange(this, message, message.parseSender(), message.arg(0));
-                break;
-            case "QUIT": // nick, quitMessage
-                listener.onUserQuit(this, message, message.parseSender(), message.arg(0));
-                break;
-            case "MODE": // target, flags, [limit], [user], [ban mask]
-                if (channelTypes.indexOf(message.arg(0).charAt(0)) != -1) {
-                    listener.onChannelMode(this, message, message.parseSender(), message.arg(0), message.arg(1), message.subargs(2));
-                } else {
-                    listener.onUserMode(this, message, message.parseSender(), message.arg(1), message.subargs(2));
-                }
-                break;
+        String command = message.getCommand();
+        if(command.equals("PING")) {
+            sendRaw("PONG " + message.arg(0));
+        } else if(command.equals("NOTICE")) {
+            if (channelTypes.indexOf(message.arg(0).charAt(0)) != -1) {
+                listener.onChannelNotice(this, message, message.parseSender(), message.arg(0), message.arg(1));
+            } else {
+                listener.onUserNotice(this, message, message.parseSender(), message.arg(1));
+            }
+        } else if(command.equals("PRIVMSG")) {
+            if (channelTypes.indexOf(message.arg(0).charAt(0)) != -1) {
+                listener.onChannelChat(this, message, message.parseSender(), message.arg(0), message.arg(1));
+            } else {
+                listener.onUserChat(this, message, message.parseSender(), message.arg(1));
+            }
+        } else if(command.equals("JOIN")) {
+            listener.onUserJoin(this, message, message.parseSender(), message.arg(0));
+        } else if(command.equals("PART")) {
+            listener.onUserPart(this, message, message.parseSender(), message.arg(0), message.arg(1));
+        } else if(command.equals("TOPIC")) {
+            listener.onChannelTopicChange(this, message, message.parseSender(), message.arg(0), message.arg(1));
+        } else if(command.equals("NICK")) {
+            listener.onUserNickChange(this, message, message.parseSender(), message.arg(0));
+        } else if(command.equals("QUIT")) {
+            listener.onUserQuit(this, message, message.parseSender(), message.arg(0));
+        } else if(command.equals("MODE")) {
+            if (channelTypes.indexOf(message.arg(0).charAt(0)) != -1) {
+                listener.onChannelMode(this, message, message.parseSender(), message.arg(0), message.arg(1), message.subargs(2));
+            } else {
+                listener.onUserMode(this, message, message.parseSender(), message.arg(1), message.subargs(2));
+            }
         }
     }
 
@@ -225,7 +218,9 @@ public class IRCConnection implements Runnable {
                 for(String capability : configuration.getCapabilities()) {
                     sendRaw("CAP REQ " + capability);
                 }
-                configuration.getAutoJoinChannels().forEach(this::join);
+                for(String channel : configuration.getAutoJoinChannels()) {
+                    join(channel);
+                }
                 break;
             case IRCNumerics.RPL_MYINFO:
                 serverType = message.arg(1);

@@ -9,7 +9,7 @@ import java.util.Set;
 @Data
 @RequiredArgsConstructor
 public class ChannelSnapshot {
-    private final Set<UserSnapshot> users = new HashSet<>();
+    private final Set<UserSnapshot> users = new HashSet<UserSnapshot>();
     private final String name;
     private String topic;
 }
