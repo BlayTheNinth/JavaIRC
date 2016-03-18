@@ -95,7 +95,7 @@ public class IRCConnection implements Runnable {
                         socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
                     }
                     SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(configuration.getServer(), configuration.getPort());
-                    if (configuration.getLocalAddress() != null) {
+                    if (configuration.getLocalAddress() != null && !configuration.getLocalAddress().isEmpty()) {
                         sslSocket.bind(new InetSocketAddress(configuration.getLocalAddress(), configuration.getPort()));
                     }
                     if(configuration.isDisableDiffieHellman()) {
@@ -117,7 +117,7 @@ public class IRCConnection implements Runnable {
             } else {
                 SocketAddress targetAddr = new InetSocketAddress(configuration.getServer(), configuration.getPort());
                 socket = new Socket();
-                if (configuration.getLocalAddress() != null) {
+                if (configuration.getLocalAddress() != null && !configuration.getLocalAddress().isEmpty()) {
                     socket.bind(new InetSocketAddress(configuration.getLocalAddress(), configuration.getPort()));
                 }
                 socket.connect(targetAddr);
