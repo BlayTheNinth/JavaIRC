@@ -8,7 +8,7 @@ public abstract class IRCAdapter implements IRCListener {
 
     @Override
     public void onUnhandledException(IRCConnection connection, Exception e) {
-
+        e.printStackTrace();
     }
 
     @Override
