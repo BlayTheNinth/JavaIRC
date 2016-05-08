@@ -10,8 +10,8 @@ import java.util.Set;
 
 @Data
 public class UserSnapshot {
-    private final Set<ChannelSnapshot> channels = new HashSet<ChannelSnapshot>();
-    private final Map<String, IRCChannelUserMode> channelModes = new HashMap<String, IRCChannelUserMode>();
+    private transient final Set<ChannelSnapshot> channels = new HashSet<ChannelSnapshot>();
+    private transient final Map<String, IRCChannelUserMode> channelModes = new HashMap<String, IRCChannelUserMode>();
     private String nick;
     private String hostname;
     private String username;
