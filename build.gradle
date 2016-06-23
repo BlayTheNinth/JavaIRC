@@ -10,8 +10,8 @@ def MAVEN_USERNAME = System.getenv("MAVEN_USERNAME") ?: ""
 def MAVEN_PASSWORD = System.getenv("MAVEN_PASSWORD") ?: ""
 
 version = "0.0." + BUILD_NUMBER
-group = "net.blay09"
-archivesBaseName = "javairc"
+group = "net.blay09.lib"
+archivesBaseName = "JavaIRC"
 
 repositories {
     mavenCentral()
