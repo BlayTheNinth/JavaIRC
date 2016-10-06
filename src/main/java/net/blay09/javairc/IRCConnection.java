@@ -157,6 +157,7 @@ public class IRCConnection implements Runnable {
                     handleMessage(parser.parse(line));
                 }
             }
+            stop();
         } catch(IOException e) {
             if (!e.getMessage().equals("Socket closed")) {
                 unhandledException(e);
@@ -294,6 +295,10 @@ public class IRCConnection implements Runnable {
             } catch (IOException ignored) {
             }
         }
+        if(sender != null) {
+            sender.stop();
+        }
+        listener.onDisconnected(this);
         connected = false;
         running = false;
     }
