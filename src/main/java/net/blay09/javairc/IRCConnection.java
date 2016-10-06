@@ -299,9 +299,9 @@ public class IRCConnection implements Runnable {
             sender.stop();
         }
         if(connected) {
+            connected = false;
             listener.onDisconnected(this);
         }
-        connected = false;
         running = false;
     }
 
