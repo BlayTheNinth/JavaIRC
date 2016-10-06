@@ -298,7 +298,9 @@ public class IRCConnection implements Runnable {
         if(sender != null) {
             sender.stop();
         }
-        listener.onDisconnected(this);
+        if(connected) {
+            listener.onDisconnected(this);
+        }
         connected = false;
         running = false;
     }
