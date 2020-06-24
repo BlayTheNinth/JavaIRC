@@ -2,18 +2,17 @@ package net.blay09.javairc;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 public class IRCConnectionTest {
 
     @Test
     public void testIRCConnection() throws Exception {
-        IRCConfiguration configuration = IRCConfiguration.builder()
-                .server("irc.esper.net")
-                .nick("BalyChan")
-                .debug(true)
-                .autoJoinChannel("#BalyWare")
-                .build();
+        IRCConfiguration configuration = new IRCConfiguration()
+                .setServer("irc.esper.net")
+                .setNick("BalyChan")
+                .setDebug(true)
+                .addAutoJoinChannel("#BalyWare");
         IRCConnection connection = new IRCConnection(configuration, new IRCAdapter() {
             @Override
             public void onConnected(IRCConnection connection) {
@@ -22,10 +21,10 @@ public class IRCConnectionTest {
         });
         connection.start();
         int timeout = 0;
-        while(connection.isRunning()) {
+        while (connection.isRunning()) {
             Thread.sleep(1000);
             timeout++;
-            if(timeout >= 20) {
+            if (timeout >= 20) {
                 fail("Timed out.");
             }
         }

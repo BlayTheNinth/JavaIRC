@@ -4,7 +4,7 @@ import java.util.LinkedList;
 
 public class IRCSender implements Runnable {
 
-    private final LinkedList<String> queue = new LinkedList<String>();
+    private final LinkedList<String> queue = new LinkedList<>();
     private final Thread thread;
     private final IRCConnection connection;
     private int messageDelay;
@@ -41,7 +41,8 @@ public class IRCSender implements Runnable {
                 }
                 try {
                     Thread.sleep(messageSent ? messageDelay : 100);
-                } catch (InterruptedException ignored) {}
+                } catch (InterruptedException ignored) {
+                }
             }
         } catch (Exception e) {
             connection.unhandledException(e);

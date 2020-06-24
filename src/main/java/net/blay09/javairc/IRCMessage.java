@@ -1,7 +1,5 @@
 package net.blay09.javairc;
 
-import lombok.Getter;
-
 import java.util.Arrays;
 import java.util.Map;
 
@@ -9,9 +7,8 @@ public class IRCMessage {
 
     private final Map<String, String> tags;
     private final String[] args;
-    private @Getter String prefix;
-    private @Getter String command;
-
+    private String prefix;
+    private String command;
 
     public IRCMessage(Map<String, String> tags, String prefix, String command, String[] args) {
         this.tags = tags;
@@ -30,7 +27,7 @@ public class IRCMessage {
 
     public String getHostname() {
         int idx = prefix.indexOf("@");
-        if(idx != -1 && idx + 1 < prefix.length()) {
+        if (idx != -1 && idx + 1 < prefix.length()) {
             return prefix.substring(idx + 1);
         }
         return null;
@@ -39,10 +36,10 @@ public class IRCMessage {
     public String getUsername() {
         int start = prefix.indexOf('!');
         int end = prefix.indexOf('@');
-        if(end == -1) {
+        if (end == -1) {
             end = prefix.length() - 1;
         }
-        if(start != -1 && start + 1 < prefix.length()) {
+        if (start != -1 && start + 1 < prefix.length()) {
             return prefix.substring(start + 1, end);
         }
         return null;
@@ -50,7 +47,7 @@ public class IRCMessage {
 
     public String getNick() {
         int end = prefix.indexOf('!');
-        if(end != -1) {
+        if (end != -1) {
             return prefix.substring(0, end);
         }
         return prefix;
@@ -61,7 +58,7 @@ public class IRCMessage {
     }
 
     public String arg(int idx) {
-        if(idx >= args.length) {
+        if (idx >= args.length) {
             return null;
         }
         return args[idx];
@@ -77,5 +74,13 @@ public class IRCMessage {
 
     public String getTagByKey(String key) {
         return tags != null ? tags.get(key) : null;
+    }
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public String getCommand() {
+        return command;
     }
 }

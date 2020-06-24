@@ -1,6 +1,6 @@
 package net.blay09.javairc;
 
-import lombok.extern.java.Log;
+
 import net.blay09.javairc.snapshot.ChannelSnapshot;
 import net.blay09.javairc.snapshot.SnapshotWrapper;
 import net.blay09.javairc.snapshot.UserSnapshot;
@@ -21,10 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-@Log
+
 public class IRCConnection implements Runnable {
+
+    private static final Logger log = Logger.getLogger(IRCConnection.class.getName());
 
     private static final String LINE_FEED = "\r\n";
 
@@ -51,9 +54,9 @@ public class IRCConnection implements Runnable {
     private String channelUserModePrefixes = "@+";
 
     public IRCConnection(final IRCConfiguration configuration, IRCListener listener) {
-        if(configuration.isSnapshots()) {
-            channelSnapshots = new HashMap<String, ChannelSnapshot>();
-            userSnapshots = new HashMap<String, UserSnapshot>();
+        if (configuration.isKeepingSnapshots()) {
+            channelSnapshots = new HashMap<>();
+            userSnapshots = new HashMap<>();
             this.listener = new SnapshotWrapper(listener, channelSnapshots, userSnapshots);
         } else {
             channelSnapshots = null;
@@ -84,10 +87,10 @@ public class IRCConnection implements Runnable {
 
     private boolean connect() {
         try {
-            if(configuration.isSecure()) {
+            if (configuration.isSecure()) {
                 try {
                     SSLSocketFactory socketFactory;
-                    if(configuration.isSelfSigned()) {
+                    if (configuration.isTrustingSelfSigned()) {
                         SSLContext context = SSLContext.getInstance("TLS");
                         context.init(null, new TrustManager[]{new NaiveTrustManager()}, null);
                         socketFactory = context.getSocketFactory();
@@ -98,20 +101,18 @@ public class IRCConnection implements Runnable {
                     if (configuration.getLocalAddress() != null && !configuration.getLocalAddress().isEmpty()) {
                         sslSocket.bind(new InetSocketAddress(configuration.getLocalAddress(), configuration.getPort()));
                     }
-                    if(configuration.isDisableDiffieHellman()) {
-                        List<String> cipherSuites = new ArrayList<String>();
-                        for(String suite : sslSocket.getEnabledCipherSuites()) {
-                            if(!suite.contains("_DHE_")) {
+                    if (configuration.isDiffieHellmanDisabled()) {
+                        List<String> cipherSuites = new ArrayList<>();
+                        for (String suite : sslSocket.getEnabledCipherSuites()) {
+                            if (!suite.contains("_DHE_")) {
                                 cipherSuites.add(suite);
                             }
                         }
-                        sslSocket.setEnabledCipherSuites(cipherSuites.toArray(new String[cipherSuites.size()]));
+                        sslSocket.setEnabledCipherSuites(cipherSuites.toArray(new String[0]));
                     }
                     sslSocket.startHandshake();
                     socket = sslSocket;
-                } catch (NoSuchAlgorithmException e) {
-                    listener.onConnectionFailed(this, e);
-                } catch (KeyManagementException e) {
+                } catch (NoSuchAlgorithmException | KeyManagementException e) {
                     listener.onConnectionFailed(this, e);
                 }
             } else {
@@ -134,7 +135,7 @@ public class IRCConnection implements Runnable {
 
     @Override
     public void run() {
-        if(!connect()) {
+        if (!connect()) {
             running = false;
             return;
         }
@@ -145,7 +146,9 @@ public class IRCConnection implements Runnable {
             }
         }
         sendRaw("NICK " + nick);
-        sendRaw("USER " + (configuration.getUsername() != null ? configuration.getUsername() : nick) + " \"\" \"\" " + (configuration.getRealName() != null ? configuration.getRealName() : nick));
+        sendRaw("USER " + (configuration.getUsername() != null ? configuration.getUsername() : nick) + " \"\" \"\" " + (configuration.getRealName() != null
+                ? configuration.getRealName()
+                : nick));
         sender.start();
         try {
             String line;
@@ -158,68 +161,78 @@ public class IRCConnection implements Runnable {
                 }
             }
             stop();
-        } catch(IOException e) {
+        } catch (IOException e) {
             if (!e.getMessage().equals("Socket closed")) {
                 unhandledException(e);
             } else {
                 stop();
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             unhandledException(e);
         }
     }
 
     private void handleMessage(IRCMessage message) {
-        if(!listener.onRawMessage(this, message)) {
+        if (!listener.onRawMessage(this, message)) {
             return;
         }
         int numeric = message.getNumericCommand();
-        if(numeric > 0) {
+        if (numeric > 0) {
             handleMessageNumeric(numeric, message);
             return;
         }
         String command = message.getCommand();
-        if(command.equals("PING")) {
-            sendRaw("PONG " + message.arg(0));
-        } else if(command.equals("NOTICE")) {
-            if (channelTypes.indexOf(message.arg(0).charAt(0)) != -1) {
-                listener.onChannelNotice(this, message, message.parseSender(), message.arg(0), message.arg(1));
-            } else {
-                listener.onUserNotice(this, message, message.parseSender(), message.arg(1));
-            }
-        } else if(command.equals("PRIVMSG")) {
-            if (channelTypes.indexOf(message.arg(0).charAt(0)) != -1) {
-                listener.onChannelChat(this, message, message.parseSender(), message.arg(0), message.arg(1));
-            } else {
-                listener.onUserChat(this, message, message.parseSender(), message.arg(1));
-            }
-        } else if(command.equals("JOIN")) {
-            listener.onUserJoin(this, message, message.parseSender(), message.arg(0));
-        } else if(command.equals("PART")) {
-            listener.onUserPart(this, message, message.parseSender(), message.arg(0), message.arg(1));
-        } else if(command.equals("TOPIC")) {
-            listener.onChannelTopicChange(this, message, message.parseSender(), message.arg(0), message.arg(1));
-        } else if(command.equals("NICK")) {
-            listener.onUserNickChange(this, message, message.parseSender(), message.arg(0));
-        } else if(command.equals("QUIT")) {
-            listener.onUserQuit(this, message, message.parseSender(), message.arg(0));
-        } else if(command.equals("MODE")) {
-            if (channelTypes.indexOf(message.arg(0).charAt(0)) != -1) {
-                listener.onChannelMode(this, message, message.parseSender(), message.arg(0), message.arg(1), message.subargs(2));
-            } else {
-                listener.onUserMode(this, message, message.parseSender(), message.arg(1), message.subargs(2));
-            }
+        switch (command) {
+            case "PING":
+                sendRaw("PONG " + message.arg(0));
+                break;
+            case "NOTICE":
+                if (channelTypes.indexOf(message.arg(0).charAt(0)) != -1) {
+                    listener.onChannelNotice(this, message, message.parseSender(), message.arg(0), message.arg(1));
+                } else {
+                    listener.onUserNotice(this, message, message.parseSender(), message.arg(1));
+                }
+                break;
+            case "PRIVMSG":
+                if (channelTypes.indexOf(message.arg(0).charAt(0)) != -1) {
+                    listener.onChannelChat(this, message, message.parseSender(), message.arg(0), message.arg(1));
+                } else {
+                    listener.onUserChat(this, message, message.parseSender(), message.arg(1));
+                }
+                break;
+            case "JOIN":
+                listener.onUserJoin(this, message, message.parseSender(), message.arg(0));
+                break;
+            case "PART":
+                listener.onUserPart(this, message, message.parseSender(), message.arg(0), message.arg(1));
+                break;
+            case "TOPIC":
+                listener.onChannelTopicChange(this, message, message.parseSender(), message.arg(0), message.arg(1));
+                break;
+            case "NICK":
+                listener.onUserNickChange(this, message, message.parseSender(), message.arg(0));
+                break;
+            case "QUIT":
+                listener.onUserQuit(this, message, message.parseSender(), message.arg(0));
+                break;
+            case "MODE":
+                if (channelTypes.indexOf(message.arg(0).charAt(0)) != -1) {
+                    listener.onChannelMode(this, message, message.parseSender(), message.arg(0), message.arg(1), message.subargs(2));
+                } else {
+                    listener.onUserMode(this, message, message.parseSender(), message.arg(1), message.subargs(2));
+                }
+                break;
         }
     }
 
     private void handleMessageNumeric(int numeric, IRCMessage message) {
-        switch(numeric) {
+        switch (numeric) {
             case IRCNumerics.RPL_WELCOME:
                 listener.onConnected(this);
-                for(String capability : configuration.getCapabilities()) {
+                for (String capability : configuration.getCapabilities()) {
                     sendRaw("CAP REQ " + capability);
                 }
-                for(String channel : configuration.getAutoJoinChannels()) {
+                for (String channel : configuration.getAutoJoinChannels()) {
                     join(channel);
                 }
                 break;
@@ -289,16 +302,16 @@ public class IRCConnection implements Runnable {
     }
 
     public void stop() {
-        if(socket != null) {
+        if (socket != null) {
             try {
                 socket.close();
             } catch (IOException ignored) {
             }
         }
-        if(sender != null) {
+        if (sender != null) {
             sender.stop();
         }
-        if(connected) {
+        if (connected) {
             connected = false;
             listener.onDisconnected(this);
         }
@@ -306,14 +319,14 @@ public class IRCConnection implements Runnable {
     }
 
     public void sendRaw(String line) {
-        if(configuration.isDebug()) {
+        if (configuration.isDebug()) {
             log.info("> " + line);
         }
         sender.addToSendQueue(line);
     }
 
     public void sendRawNow(String line) throws IOException {
-        if(writer != null) {
+        if (writer != null) {
             writer.write(line);
             writer.write(LINE_FEED);
             writer.flush();

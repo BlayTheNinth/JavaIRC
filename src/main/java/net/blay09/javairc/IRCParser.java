@@ -7,21 +7,21 @@ import java.util.Map;
 
 public class IRCParser {
 
-    private final List<String> args = new ArrayList<String>();
+    private final List<String> args = new ArrayList<>();
     private String data;
     private int idx;
 
     public IRCMessage parse(String data) {
         reset(data);
         Map<String, String> tagMap = null;
-        if(data.startsWith("@")) {
+        if (data.startsWith("@")) {
             idx++;
             String tags = nextToken();
             String[] splitTags = tags.split(";");
-            tagMap = new HashMap<String, String>(splitTags.length);
-            for(String tagPair : splitTags) {
+            tagMap = new HashMap<>(splitTags.length);
+            for (String tagPair : splitTags) {
                 int eqIdx = tagPair.indexOf('=');
-                if(eqIdx != -1) {
+                if (eqIdx != -1) {
                     String value = tagPair.substring(eqIdx + 1);
                     value = value.replace("\\s", " ");
                     value = value.replace("\\:", ";");
@@ -36,7 +36,7 @@ public class IRCParser {
         }
         String prefix;
         String cmd;
-        if(data.startsWith(":", idx)) {
+        if (data.startsWith(":", idx)) {
             idx++;
             prefix = nextToken();
         } else {
@@ -45,10 +45,10 @@ public class IRCParser {
         cmd = nextToken();
 
         String arg;
-        while((arg = nextToken()) != null) {
+        while ((arg = nextToken()) != null) {
             args.add(arg);
         }
-        return new IRCMessage(tagMap, prefix, cmd, args.toArray(new String[args.size()]));
+        return new IRCMessage(tagMap, prefix, cmd, args.toArray(new String[0]));
     }
 
     public void reset(String data) {
@@ -58,16 +58,16 @@ public class IRCParser {
     }
 
     public String nextToken() {
-        if(idx >= data.length() - 1) {
+        if (idx >= data.length() - 1) {
             return null;
         }
         int nextIdx;
-        if(data.charAt(idx) == ':') {
+        if (data.charAt(idx) == ':') {
             idx++;
             nextIdx = data.length();
         } else {
             nextIdx = data.indexOf(' ', idx);
-            if(nextIdx == -1) {
+            if (nextIdx == -1) {
                 nextIdx = data.length();
             }
         }

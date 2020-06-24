@@ -18,7 +18,7 @@ public class SnapshotWrapper implements IRCListener {
 
     private UserSnapshot getUserSnapshot(String nick) {
         UserSnapshot user = users.get(nick.toLowerCase());
-        if(user == null) {
+        if (user == null) {
             user = new UserSnapshot(nick);
             users.put(nick.toLowerCase(), user);
         }
@@ -27,7 +27,7 @@ public class SnapshotWrapper implements IRCListener {
 
     private ChannelSnapshot getChannelSnapshot(String name) {
         ChannelSnapshot channel = channels.get(name.toLowerCase());
-        if(channel == null) {
+        if (channel == null) {
             channel = new ChannelSnapshot(name);
             channels.put(name.toLowerCase(), channel);
         }
@@ -37,7 +37,7 @@ public class SnapshotWrapper implements IRCListener {
     @Override
     public boolean onRawMessage(IRCConnection connection, IRCMessage message) {
         int numeric = message.getNumericCommand();
-        switch(numeric) {
+        switch (numeric) {
             case IRCNumerics.RPL_IDENTIFIED:
             case IRCNumerics.RPL_WHOISLOGIN2: // ?, nick
                 getUserSnapshot(message.arg(1)).setLoginName(message.arg(1));
@@ -109,7 +109,7 @@ public class SnapshotWrapper implements IRCListener {
     @Override
     public void onUserQuit(IRCConnection connection, IRCMessage message, IRCUser user, String quitMessage) {
         UserSnapshot userSnapshot = getUserSnapshot(user.getNick());
-        for(ChannelSnapshot channelSnapshot : userSnapshot.getChannels()) {
+        for (ChannelSnapshot channelSnapshot : userSnapshot.getChannels()) {
             channelSnapshot.getUsers().remove(userSnapshot);
         }
         userSnapshot.getChannels().clear();
